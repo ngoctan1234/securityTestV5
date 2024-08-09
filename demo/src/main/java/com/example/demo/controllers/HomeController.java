@@ -1,6 +1,7 @@
 package com.example.demo.controllers;
 
 import com.example.demo.models.User;
+import com.example.demo.responses.AuthResponse;
 import com.example.demo.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,14 +27,17 @@ public class HomeController {
     public String admin(){
         return "admin page";
     }
+
     @GetMapping("/admin/1")
     public String admin1(){
         return "admin page";
     }
+
     @DeleteMapping("/admin/meo")
     public String admin2(){
         return "admin page";
     }
+
     @PostMapping("/admin/nai")
     public String admin3(){
         return "admin page";
@@ -51,19 +55,30 @@ public class HomeController {
 
     @GetMapping("test4/both")
     public String index3(){
-        return "USER ADMIn page";
+        return "USER ADMIN page";
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(
+    public ResponseEntity<?> login(
              @RequestBody User user) {
         // Kiểm tra thông tin đăng nhập và sinh token
         try {
-            String token = userService.login(user.getUsername(), user.getPassword());
+            AuthResponse authResponse= userService.login(user.getUsername(), user.getPassword());
             // Trả về token trong response
-            return ResponseEntity.ok(token);
+            return ResponseEntity.ok(authResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<String> refreshToken(@RequestParam  String refreshToken) throws Exception{
+        try {
+            String newAccessToken = userService.refreshToken(refreshToken) ;
+            return ResponseEntity.ok(newAccessToken);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }

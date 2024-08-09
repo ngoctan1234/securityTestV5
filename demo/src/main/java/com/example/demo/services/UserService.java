@@ -4,6 +4,7 @@ package com.example.demo.services;
 import com.example.demo.components.JwtTokenUtil;
 import com.example.demo.models.User;
 import com.example.demo.repositories.UserRepository;
+import com.example.demo.responses.AuthResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -11,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -21,7 +23,7 @@ public class UserService {
     private  final AuthenticationManager authenticationManager;
     private final JwtTokenUtil jwtTokenUtil;
 
-    public String login(String username, String password) throws Exception {
+    public AuthResponse login(String username, String password) throws Exception {
 //        Optional<User> optionalUser = userRepository.findByUsername(username);
 //        if(optionalUser.isEmpty()) {
 //            throw new DataNotFoundException("Invalid phone number / password");
@@ -43,6 +45,22 @@ public class UserService {
 
         //authenticate with Java Spring security
         authenticationManager.authenticate(authenticationToken);
+        String accessToken= jwtTokenUtil.generateToken(user);
+        String refreshToken=jwtTokenUtil.generateRefreshToken(new HashMap<>(),user);
+        return new AuthResponse(accessToken, refreshToken, user, "success", "Đăng nhập thành công.");
+    }
+
+    public String refreshToken(String refreshToken) throws Exception {
+        if (jwtTokenUtil.isTokenExpired(refreshToken)) {
+            throw new RuntimeException("Refresh token đã hết hạn.");
+        }
+        // Trích xuất username từ refresh token
+        String username = jwtTokenUtil.extractUsername(refreshToken);
+
+        // Tìm người dùng từ username
+        User user=userRepository.findByUsername(username).orElseThrow();
+
+        // Tạo và trả về access token mới
         return jwtTokenUtil.generateToken(user);
     }
 }

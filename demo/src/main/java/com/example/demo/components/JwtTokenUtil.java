@@ -24,6 +24,8 @@ public class JwtTokenUtil {
     private int expiration; //save to an environment variable
     @Value("${jwt.secretKey}")
     private String secretKey;
+    @Value("${jwt.refreshTime}")
+    private int refreshTime;
     public String generateToken(User user) throws Exception{
         //properties => claims
         Map<String, Object> claims = new HashMap<>();
@@ -43,6 +45,32 @@ public class JwtTokenUtil {
             //return null;
         }
     }
+//    public String generateRefreshToken( User user) {
+//        try {
+//            Map<String, Object> claims = new HashMap<>();
+//            return Jwts.builder()
+//                    .claims(claims)
+//                    .subject(user.getUsername())
+//                    .issuedAt(new Date(System.currentTimeMillis()))
+//                    .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME * 1000L))
+//                    .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+//                    .compact();
+//        } catch (Exception e) {
+//            throw new RuntimeException("Cannot create refresh token, error: " + e.getMessage());
+//        }
+//    }
+
+    public String generateRefreshToken(HashMap<String, Object> claims, User user){
+        return Jwts.builder()
+                .claims(claims)
+                .subject(user.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + refreshTime* 1000L))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+
     private Key getSignInKey() {
         byte[] bytes = Decoders.BASE64.decode(secretKey);
         //Keys.hmacShaKeyFor(Decoders.BASE64.decode("TaqlmGv1iEDMRiFp/pHuID1+T84IABfuA0xXh4GhiUI="));
@@ -56,6 +84,7 @@ public class JwtTokenUtil {
         return secretKey;
     }
     private Claims extractAllClaims(String token) {
+        token = token.trim();
         return Jwts.parser()
                 .setSigningKey(getSignInKey())
                 .build()
